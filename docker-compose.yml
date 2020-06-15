@@ -1,0 +1,43 @@
+version: "2"
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+
+  bitbucket:
+    image: bitbucket:5.13.0
+    container_name: bitbucket
+    build:
+      context: ./
+    restart: always
+    volumes:
+      - ./bitbucket-home:/var/atlassian/application-data/bitbucket
+    links:
+      - database
+    depends_on:
+      - database
+    environment:
+      - JVM_MINIMUM_MEMORY=5g
+      - JVM_MAXIMUM_MEMORY=5g
+
+  database:
+    image: postgres:9.4
+    container_name: database
+    restart: always
+    volumes:
+      - ./data:/var/lib/postgresql/data
+      - ./postgres/setup-bitbucket-db.sh:/docker-entrypoint-initdb.d/setup-bitbucket-db.sh
+
+  node-exporter:
+    image: prom/node-exporter
+    container_name: node-exporter
+    restart: always
+    ports:
+      - "9100:9100"
